@@ -1,135 +1,306 @@
 Pothole Detection Using YOLOv8
+
 Overview
-This project implements an object detection system for identifying potholes in road images using YOLOv8.
 
-The model is trained to locate potholes using bounding-box annotations and can identify the position of potholes within an image rather than simply classifying whether a pothole is present.
+This project implements a deep learning-based object detection system to identify potholes in road images using YOLOv8 (You Only Look Once).
 
-The project covers dataset preparation, annotation conversion, YOLO-format dataset organization, model training, validation, and pothole detection on images.
+Unlike image classification, which only predicts whether an image contains a pothole, this system performs object detection by identifying the pothole's location and drawing a bounding box around it.
+
+The project covers dataset preparation, annotation conversion, model training, validation, evaluation, and inference on new road images.
+
+Objectives
+
+Detect potholes automatically in road images.
+
+Identify the location of each detected pothole.
+
+Draw bounding boxes around potholes.
+
+Estimate the confidence score for each detection.
+
+Evaluate model performance using object detection metrics.
+
+Build a foundation for automated road-condition monitoring.
 
 Dataset
-The project uses the Annotated Potholes Image Dataset originally created by Atikur Rahman Chitholian.
 
-Kaggle Dataset
-Annotated Potholes Image Dataset - Kaggle
+The project uses the Annotated Potholes Image Dataset, originally created by Atikur Rahman Chitholian.
 
-The original dataset contains 665 road images with annotated potholes. The dataset was subsequently exported in YOLOv8 format for object detection.
+Dataset: Annotated Potholes Image Dataset on Kaggle
 
-Dataset Distribution
-Split	Images
-Training	466
-Validation	134
-Testing	68
-Total	668*
-The dataset source documentation states 665 images; the exported directory structure contains 466 training, 134 validation, and 68 test images. The repository therefore preserves the exported dataset structure rather than modifying the source counts.
+Original dataset size: 665 annotated road images.
 
-Classes
-The project contains one object-detection class:
+Annotation format: Pascal VOC XML, converted to YOLO format when required.
 
-pothole
-Objective
-The primary objective is to develop a computer vision model capable of automatically detecting potholes in road images.
+Object class: pothole
 
-The system predicts:
+The repository's exported YOLO-format dataset is described as having the following distribution:
 
-Whether a pothole is present
-The location of the pothole
-The bounding box surrounding the detected pothole
-The model confidence for each detection
+Split
+
+Images
+
+Training
+
+466
+
+Validation
+
+134
+
+Testing
+
+68
+
+Total
+
+668*
+
+*The source documentation states 665 images, while the exported split counts sum to 668. The actual dataset files should be checked to confirm the final counts.
+
+Dataset Structure
+
+The prepared dataset follows the YOLO object detection directory structure:
+
+dataset/
+├── train/
+│   ├── images/
+│   └── labels/
+├── valid/
+│   ├── images/
+│   └── labels/
+├── test/
+│   ├── images/
+│   └── labels/
+└── data.yaml
+
+Each image has a corresponding label file containing the annotated pothole bounding boxes.
+
 Technology Stack
+
 Python
+
 YOLOv8
+
 Ultralytics
+
+PyTorch
+
 OpenCV
+
 NumPy
+
 Matplotlib
+
 Google Colab
-Roboflow YOLOv8 dataset format
+
+Roboflow YOLO dataset format
+
+Model Architecture
+
+The project uses YOLOv8 Nano (yolov8n), a lightweight, one-stage object detection model.
+
+YOLO predicts object locations and class probabilities in a single forward pass, making it suitable for efficient image inference.
+
+The Nano model is selected as a starting point because it requires relatively fewer computational resources than larger YOLOv8 variants.
+
 Object Detection Workflow
+
 Road Image Dataset
         |
-Annotated Bounding Boxes
+        v
+Pothole Bounding-Box Annotations
         |
-YOLOv8 Dataset Preparation
+        v
+Dataset Preparation
         |
+        v
+YOLO Annotation Conversion
+        |
+        v
 Train / Validation / Test Split
         |
-YOLOv8 Model Training
+        v
+YOLOv8n Model Training
         |
-Model Validation
+        v
+Model Validation and Evaluation
         |
-Best Model Weights
+        v
+Best Model Weights (best.pt)
         |
-New Image Inference
+        v
+Inference on New Road Images
         |
-Pothole Bounding Box Detection
-Dataset Preparation
-The original pothole annotations were converted into YOLO-compatible label files.
+        v
+Pothole Bounding Boxes and Confidence Scores
 
-Each annotation follows the YOLO object-detection format:
+Dataset Preparation
+
+The original annotations may be provided in Pascal VOC XML format. These annotations must be converted into YOLO-compatible text files if the dataset has not already been converted.
+
+Each YOLO label follows this format:
 
 class_id x_center y_center width height
-The dataset configuration is defined in data.yaml.
 
-nc: 1
-names: ['pothole']
-The dataset uses separate directories for:
+The bounding-box coordinates are normalized relative to the image width and height.
 
-train/
-valid/
-test/
-Each split contains corresponding image and label directories.
+For this project, the class ID is:
 
-Model
-The project uses YOLOv8 Nano (yolov8n) for pothole detection.
+0 = pothole
 
-YOLOv8 is a one-stage object detection architecture designed to perform object localization and classification efficiently.
+The dataset configuration is defined in data.yaml:
 
-The Nano variant provides a lightweight model suitable for experimentation and deployment on systems with limited computational resources.
+path: /path/to/dataset
+train: train/images
+val: valid/images
+test: test/images
 
-Training Configuration
-The model is trained using the YOLOv8 training pipeline.
+names:
+  0: pothole
 
-Key configuration includes:
+The dataset path must be updated to match the actual location of the prepared dataset.
 
-Parameter	Value
-Model	YOLOv8n
-Task	Object Detection
-Classes	1
-Input Image Size	640 × 640
-Epochs	50
-Dataset Format	YOLOv8
-Target Class	Pothole
-Model Evaluation
-The trained model is evaluated using object-detection metrics such as:
+Installation
 
-Precision
-Recall
-mAP@50
-mAP@50–95
-Training and validation losses
-The project also performs inference on validation/test images to visually inspect detected potholes and their bounding boxes.
+Install the required Python libraries:
 
-Inference
-After training, the best model weights can be used to detect potholes in new images.
+pip install ultralytics opencv-python numpy matplotlib pyyaml
 
-Example workflow:
+Verify the installation:
+
+import ultralytics
+
+print(ultralytics.__version__)
+
+Model Training
+
+Load the pretrained YOLOv8 Nano model and fine-tune it on the prepared pothole dataset.
 
 from ultralytics import YOLO
 
-model = YOLO("best.pt")
+# Load pretrained YOLOv8 Nano weights
+model = YOLO("yolov8n.pt")
 
+# Train the model
+results = model.train(
+    data="data.yaml",
+    epochs=50,
+    imgsz=640,
+    batch=16,
+    name="pothole_detection"
+)
+
+Training Configuration
+
+Parameter
+
+Value
+
+Model
+
+YOLOv8n
+
+Task
+
+Object Detection
+
+Number of classes
+
+1
+
+Target class
+
+Pothole
+
+Input image size
+
+640 × 640
+
+Epochs
+
+50
+
+Dataset format
+
+YOLO
+
+Training framework
+
+Ultralytics
+
+The batch size can be reduced if the available GPU memory is insufficient.
+
+Model Evaluation
+
+The model should be evaluated on validation and test images using standard object detection metrics.
+
+The main evaluation metrics include:
+
+Precision: Measures how many predicted potholes are correct.
+
+Recall: Measures how many actual potholes are detected.
+
+mAP@50: Measures mean average precision at an IoU threshold of 0.50.
+
+mAP@50–95: Measures average precision across multiple IoU thresholds.
+
+Training and validation losses: Help track model learning and potential overfitting.
+
+Example validation code:
+
+from ultralytics import YOLO
+
+model = YOLO("runs/detect/pothole_detection/weights/best.pt")
+
+metrics = model.val(
+    data="data.yaml",
+    split="test",
+    imgsz=640
+)
+
+print("mAP@50:", metrics.box.map50)
+print("mAP@50-95:", metrics.box.map)
+
+The actual metric values should be recorded after training and evaluation. No performance values are assumed in this README.
+
+Pothole Detection on New Images
+
+After training, the best model weights can be used to detect potholes in new road images.
+
+from ultralytics import YOLO
+
+# Load trained weights
+model = YOLO("runs/detect/pothole_detection/weights/best.pt")
+
+# Run inference
 results = model.predict(
     source="test_image.jpg",
     imgsz=640,
-    conf=0.25
+    conf=0.25,
+    save=True
 )
-The output contains detected pothole bounding boxes and confidence scores.
+
+# Display detected classes and confidence scores
+for result in results:
+    for box in result.boxes:
+        class_id = int(box.cls[0])
+        confidence = float(box.conf[0])
+        coordinates = box.xyxy[0].tolist()
+
+        print("Class:", model.names[class_id])
+        print("Confidence:", round(confidence, 3))
+        print("Bounding box:", coordinates)
+
+The output includes predicted pothole locations, bounding-box coordinates, and confidence scores. Annotated images can be saved using the save=True option.
 
 Project Structure
+
 Pothole-Detection-YOLOv8/
 │
 ├── pothole_detection.ipynb
 ├── data.yaml
+├── README.md
 ├── README.dataset.txt
 ├── README.roboflow.txt
 │
@@ -145,58 +316,57 @@ Pothole-Detection-YOLOv8/
 │   ├── images/
 │   └── labels/
 │
-├── runs/
-│   └── detect/
-│       └── ...
-│
-└── README.md
-Key Skills Demonstrated
-Computer Vision
-Object Detection
-YOLOv8
-Deep Learning
-Image Annotation
-YOLO Label Processing
-Dataset Preparation
-Model Training
-Model Validation
-Object Localization
-Image Inference
-Python
-Ultralytics
-OpenCV
+└── runs/
+    └── detect/
+        └── pothole_detection/
+            └── weights/
+                ├── best.pt
+                └── last.pt
+
+The structure above represents the expected project layout. Some directories, including runs/ and trained weights, are generated only after training.
+
 Applications
-A pothole detection system can be used as a foundation for:
 
-Automated road-condition monitoring
-Road maintenance systems
-Smart-city infrastructure monitoring
-Vehicle-mounted road inspection
-Road-damage mapping
-Infrastructure maintenance prioritization
+This system can serve as a foundation for:
+
+Automated road-condition monitoring.
+
+Smart-city infrastructure inspection.
+
+Vehicle-mounted road inspection.
+
+Road-damage mapping.
+
+Road maintenance prioritization.
+
+Dashcam-based pothole detection.
+
 Limitations
-The dataset contains a single object class and a relatively small number of images compared with large-scale object-detection datasets.
 
-Performance may also vary depending on:
+The dataset contains a single detection class.
 
-Lighting conditions
-Camera angle
-Pothole size
-Road surface
-Image quality
-Weather conditions
-Occlusion
-Distance from the pothole
-The model should therefore be evaluated on independent real-world road images before being considered for practical deployment.
+The number of images is relatively small for a general-purpose detection system.
+
+Performance can vary with lighting, weather, camera angle, image quality, pothole size, occlusion, and distance.
+
+Detection confidence does not directly measure pothole severity.
+
+Real-world performance must be verified on independent road images and video footage.
 
 Future Improvements
-Train with a larger and more diverse road dataset
-Add additional road-damage classes
-Perform hyperparameter tuning
-Compare YOLOv8 model sizes
-Apply controlled data augmentation
-Evaluate performance on real-world dashcam footage
-Implement real-time video detection
-Add GPS-based pothole mapping
-Develop a road-condition monitoring dashboard
-Deploy the model on an edge device
+
+Train on a larger and more diverse dataset.
+
+Add other road-damage classes.
+
+Compare YOLOv8 Nano, Small, and Medium models.
+
+Tune hyperparameters and data augmentation.
+
+Implement real-time detection on dashcam footage.
+
+Integrate GPS-based pothole mapping.
+
+Develop a road-condition monitoring dashboard.
+
+Deploy the model on edge devices.
